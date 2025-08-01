@@ -15,19 +15,77 @@ export interface Tile {
 ////////**** EDIT THIS STUFF ****////////
 
 /**
- * Given an array of tiles, update each tile's direction properties to indicate which tiles it can tile with in each direction.
- * @param tiles Array of Tile objects to update
+ * Updates each tile's neighbor arrays based on grid position and compatibility
  */
-export function updateTileNeighbors(tiles: Tile[]): void {
-  // Tiles are arranged in a grid, but represented as a 1D array. Starting at index 0, the first tile is in the top-left corner 
-  // and the last tile is in the bottom-right corner. A neighboring tile can be added like so:
-  //
-  //  tiles[0].right = [tiles[1], tiles[2]];
-  //
-  // This means that tile 0 can tile with tiles 1 and 2 to its right. It's probably best to also put the reciprocal relationship 
-  // in place so you can skip some calculations, but the implementation is entirely up to you. I'm just guessing here.
+export function updateTileNeighbors(tiles: Tile[], cols: number): void {
+  const rows = Math.ceil(tiles.length / cols);
   
-  // TODO: implement neighbor assignment logic here
+  tiles.forEach((tile, index) => {
+    const row = Math.floor(index / cols);
+    const col = index % cols;
+    
+    // Initialize neighbor arrays
+    tile.up = [];
+    tile.down = [];
+    tile.left = [];
+    tile.right = [];
+    
+    // Check each direction for compatible neighbors
+    if (row > 0) {
+      const upTile = tiles[(row - 1) * cols + col];
+      if (canTilesConnect(tile, upTile)) {
+        tile.up.push(upTile);
+      }
+    }
+    
+    if (row < rows - 1) {
+      const downTile = tiles[(row + 1) * cols + col];
+      if (canTilesConnect(tile, downTile)) {
+        tile.down.push(downTile);
+      }
+    }
+    
+    if (col > 0) {
+      const leftTile = tiles[row * cols + (col - 1)];
+      if (canTilesConnect(tile, leftTile)) {
+        tile.left.push(leftTile);
+      }
+    }
+    
+    if (col < cols - 1) {
+      const rightTile = tiles[row * cols + (col + 1)];
+      if (canTilesConnect(tile, rightTile)) {
+        tile.right.push(rightTile);
+      }
+    }
+  });
+}
+
+/**
+ * Checks if two tiles can connect to each other
+ */
+function canTilesConnect(tile1: Tile, tile2: Tile): boolean {
+  // Missing images can connect to anything
+  if (!tile1.image || !tile2.image) {
+    return true;
+  }
+  
+  // Transparent tiles can connect to anything
+  if (isTileTransparent(tile1.image) || isTileTransparent(tile2.image)) {
+    return true;
+  }
+  
+  // Otherwise, allow connection if tiles are close in the original grid
+  return Math.abs(tile1.id - tile2.id) <= 2;
+}
+
+/**
+ * Checks if a tile is mostly transparent based on data size
+ */
+function isTileTransparent(imageData: string): boolean {
+  const dataLength = imageData.length;
+  const averageNonTransparentLength = 8000;
+  return dataLength < averageNonTransparentLength * 0.7;
 }
 
 
@@ -76,7 +134,7 @@ processBtn.onclick = () => {
           });
         }
       }
-      updateTileNeighbors(tiles);
+      updateTileNeighbors(tiles, cols);
       console.log('Tiles:', tiles);
       alert(`Created ${tiles.length} tiles. Please check the console for details.`);
       //TODO - Thomas - Add code to validate results.
