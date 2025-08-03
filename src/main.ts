@@ -151,7 +151,7 @@ function extractEdgeColors(imageData: string, tileSize: number): Promise<EdgeCol
   });
 }
 
-function edgesMatch(edge1: number[][], edge2: number[][], tolerance: number = 10): boolean {
+function edgesMatch(edge1: number[][], edge2: number[][], tolerance: number = 5): boolean {
   if (edge1.length !== edge2.length) return false;
   if (edge1.length === 0) return false;
   
@@ -174,9 +174,9 @@ function edgesMatch(edge1: number[][], edge2: number[][], tolerance: number = 10
     }
   }
   
-  // Require exact match (100% of pixels must match)
+  // Require 95% of pixels to match for edges to be compatible
   const matchRatio = matchingPixels / edge1.length;
-  return matchRatio === 1.0;
+  return matchRatio >= 0.95;
 }
 
 
