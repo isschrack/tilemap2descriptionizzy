@@ -151,11 +151,11 @@ function extractEdgeColors(imageData: string, tileSize: number): Promise<EdgeCol
   });
 }
 
-function edgesMatch(edge1: number[][], edge2: number[][], tolerance: number = 5): boolean {
+function edgesMatch(edge1: number[][], edge2: number[][], tolerance: number = 2): boolean {
   if (edge1.length !== edge2.length) return false;
   if (edge1.length === 0) return false;
   
-  let matchingPixels = 0;
+  let exactMatches = 0;
   
   for (let i = 0; i < edge1.length; i++) {
     const [r1, g1, b1, a1] = edge1[i];
@@ -170,15 +170,14 @@ function edgesMatch(edge1: number[][], edge2: number[][], tolerance: number = 5)
     );
     
     if (distance <= tolerance) {
-      matchingPixels++;
+      exactMatches++;
     }
   }
   
-  // Require 95% of pixels to match for edges to be compatible
-  const matchRatio = matchingPixels / edge1.length;
-  return matchRatio >= 0.95;
+  // Require 98% of pixels to match very closely
+  const matchRatio = exactMatches / edge1.length;
+  return matchRatio >= 0.98;
 }
-
 
 ////////**** Code to take in a tileset and create array. Only edit if you need to ****////////
 
