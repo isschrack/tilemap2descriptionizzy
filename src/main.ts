@@ -53,25 +53,25 @@ export async function updateTileNeighbors(tiles: Tile[], tileSize: number = 16):
 
       // Check if tileB can be placed to the RIGHT of tileA
       // (tileA's right edge should match tileB's left edge)
-      if (edgesMatch(edgesA.right, edgesB.left)) {
+      if (edgesMatchWithTolerance(edgesA.right, edgesB.left)) {
         tileA.right!.push(tileB);
       }
 
       // Check if tileB can be placed BELOW tileA
       // (tileA's bottom edge should match tileB's top edge)
-      if (edgesMatch(edgesA.bottom, edgesB.top)) {
+      if (edgesMatchWithTolerance(edgesA.bottom, edgesB.top)) {
         tileA.down!.push(tileB);
       }
 
       // Check if tileB can be placed to the LEFT of tileA
       // (tileA's left edge should match tileB's right edge)
-      if (edgesMatch(edgesA.left, edgesB.right)) {
+      if (edgesMatchWithTolerance(edgesA.left, edgesB.right)) {
         tileA.left!.push(tileB);
       }
 
       // Check if tileB can be placed ABOVE tileA
       // (tileA's top edge should match tileB's bottom edge)
-      if (edgesMatch(edgesA.top, edgesB.bottom)) {
+      if (edgesMatchWithTolerance(edgesA.top, edgesB.bottom)) {
         tileA.up!.push(tileB);
       }
     });
@@ -151,32 +151,47 @@ function extractEdgeColors(imageData: string, tileSize: number): Promise<EdgeCol
   });
 }
 
-function edgesMatch(edge1: number[][], edge2: number[][], tolerance: number = 2): boolean {
+function edgesMatchWithTolerance(edge1: number[][], edge2: number[][]): boolean {
   if (edge1.length !== edge2.length) return false;
   if (edge1.length === 0) return false;
   
-  let exactMatches = 0;
+  // Try multiple tolerance levels from strict to more lenient
+  const toleranceLevels = [0, 2, 5, 10, 15];
+  const matchThresholds = [1.0, 0.98, 0.95, 0.90, 0.85]; // Required match percentage for each tolerance
   
-  for (let i = 0; i < edge1.length; i++) {
-    const [r1, g1, b1, a1] = edge1[i];
-    const [r2, g2, b2, a2] = edge2[i];
+  for (let i = 0; i < toleranceLevels.length; i++) {
+    const tolerance = toleranceLevels[i];
+    const requiredMatchRatio = matchThresholds[i];
     
-    // Calculate color distance using Euclidean distance in RGBA space
-    const distance = Math.sqrt(
-      Math.pow(r1 - r2, 2) + 
-      Math.pow(g1 - g2, 2) + 
-      Math.pow(b1 - b2, 2) + 
-      Math.pow(a1 - a2, 2)
-    );
+    let matchingPixels = 0;
     
-    if (distance <= tolerance) {
-      exactMatches++;
+    for (let j = 0; j < edge1.length; j++) {
+      const [r1, g1, b1, a1] = edge1[j];
+      const [r2, g2, b2, a2] = edge2[j];
+      
+      // Calculate color distance using Euclidean distance in RGBA space
+      const distance = Math.sqrt(
+        Math.pow(r1 - r2, 2) + 
+        Math.pow(g1 - g2, 2) + 
+        Math.pow(b1 - b2, 2) + 
+        Math.pow(a1 - a2, 2)
+      );
+      
+      if (distance <= tolerance) {
+        matchingPixels++;
+      }
+    }
+    
+    const matchRatio = matchingPixels / edge1.length;
+    
+    // If we find a match at this tolerance level, return true
+    if (matchRatio >= requiredMatchRatio) {
+      return true;
     }
   }
   
-  // Require 98% of pixels to match very closely
-  const matchRatio = exactMatches / edge1.length;
-  return matchRatio >= 0.98;
+  // No tolerance level worked
+  return false;
 }
 
 ////////**** Code to take in a tileset and create array. Only edit if you need to ****////////
@@ -185,7 +200,7 @@ const imageInput = document.getElementById('imageInput') as HTMLInputElement;
 const tileSizeInput = document.getElementById('tileSizeInput') as HTMLInputElement;
 const processBtn = document.getElementById('processBtn') as HTMLButtonElement;
 
-processBtn.onclick = async () => {
+processBtn.onclick = () => {
   const file = imageInput.files?.[0];
   const tileSize = parseInt(tileSizeInput.value, 10);
   if (!file || isNaN(tileSize) || tileSize <= 0) {
@@ -224,10 +239,26 @@ processBtn.onclick = async () => {
           });
         }
       }
+      // Display all tile images on screen
+      const tileGallery = document.getElementById('tileGallery') || document.createElement('div');
+      tileGallery.id = 'tileGallery';
+      tileGallery.innerHTML = '';
+      tileGallery.style.display = 'flex';
+      tileGallery.style.flexWrap = 'wrap';
+      tileGallery.style.gap = '4px';
+      tiles.forEach(tile => {
+        const imgElem = document.createElement('img');
+        imgElem.src = tile.image || '';
+        imgElem.width = tileSize;
+        imgElem.height = tileSize;
+        imgElem.style.border = '1px solid #ccc';
+        tileGallery.appendChild(imgElem);
+      });
+      document.body.appendChild(tileGallery);
       updateTileNeighbors(tiles);
       console.log('Tiles:', tiles);
       alert(`Created ${tiles.length} tiles. Please check the console for details.`);
-      //TODO - Thomas - Add code to validate results.
+      //TODO - Thomas - Add code to validate student results.
     };
     img.src = e.target?.result as string;
   };
