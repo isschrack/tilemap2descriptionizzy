@@ -185,7 +185,7 @@ const imageInput = document.getElementById('imageInput') as HTMLInputElement;
 const tileSizeInput = document.getElementById('tileSizeInput') as HTMLInputElement;
 const processBtn = document.getElementById('processBtn') as HTMLButtonElement;
 
-processBtn.onclick = () => {
+processBtn.onclick = async () => {
   const file = imageInput.files?.[0];
   const tileSize = parseInt(tileSizeInput.value, 10);
   if (!file || isNaN(tileSize) || tileSize <= 0) {
@@ -224,11 +224,10 @@ processBtn.onclick = () => {
           });
         }
       }
-      updateTileNeighbors(tiles, tileSize).then(() => {
-        console.log('Tiles:', tiles);
-        alert(`Created ${tiles.length} tiles. Please check the console for details.`);
-        //TODO - Thomas - Add code to validate results.
-      });
+      updateTileNeighbors(tiles);
+      console.log('Tiles:', tiles);
+      alert(`Created ${tiles.length} tiles. Please check the console for details.`);
+      //TODO - Thomas - Add code to validate results.
     };
     img.src = e.target?.result as string;
   };
